@@ -9,10 +9,6 @@ The HiAE is an AES-based AEAD cipher that mainly focuses on cross-platform effic
 
 ![image-20241128165045585](image/README/image-20241128165045585.png)
 
-#### Pipeline Difference of the Latest ARM and x86 Architectures
-
-![image-20241128165159582](image/README/image-20241128165159582.png)
-
 #### XAXX Structure
 
 ![XAXX.drawio (1)](image/README/XAXX.drawio%20(1).png)
