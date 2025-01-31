@@ -15,6 +15,6 @@ The HiAE is an AES-based AEAD cipher that mainly focuses on cross-platform effic
 
 ## Speed Benchmark
 
-View the full speed benchmark [here](./Speed/speed.html)
+View the full speed benchmark [here](https://concyclics.github.io/HiAE/Speed/speed.html)
 
 ![image-20241128165224697](image/README/image-20241128165224697.png)
