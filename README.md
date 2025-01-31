@@ -5,10 +5,6 @@ Official implementation of paper "HiAE: A High-Throughput Authenticated Encrypti
 
 The HiAE is an AES-based AEAD cipher that mainly focuses on cross-platform efficiency(ARM and x86) and achieves the fastest speed on the latest ARM and x86 architectures.
 
-#### AES round function instructions' difference between ARM and x86
-
-![image-20241128165045585](image/README/image-20241128165045585.png)
-
 #### XAXX Structure
 
 ![XAXX.drawio (1)](image/README/XAXX.drawio%20(1).png)
