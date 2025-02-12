@@ -1,13 +1,9 @@
-
 #ifndef __HiAE__ALGO__
 #define __HiAE__ALGO__
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-/* Modify this part before run
- */
 
 #define UNROLL_BLOCK_SIZE 256 // NUM of STATES * BLOCK_SIZE
 #define BLOCK_SIZE 16 // 128bits = 16 Bytes
@@ -18,11 +14,6 @@
 #include <immintrin.h>
 #include <wmmintrin.h>
 typedef __m128i DATA128b;
-/*
- * For Kunpeng 920
- * Compile with GCC command
- * gcc -Ofast -march=armv8.2-a+crypto HiAE.c HiAE_test.c -o HiAE
- */
 #elif defined(__ARM_FEATURE_CRYPTO) && defined(__ARM_NEON)
 #include <arm_neon.h>
 typedef uint8x16_t DATA128b;
@@ -114,7 +105,7 @@ void HiAE_stream_decrypt(DATA128b* state,
  * @param ad_len length of associate data
  * OUTPUT:
  * @param cipher a byte array for cipher text
-* @param tag 128-bit tag for verification
+ * @param tag 128-bit tag for verification
  */
 void HiAE_AEAD_encrypt(uint8_t* key, 
     uint8_t* iv, 
@@ -137,13 +128,64 @@ void HiAE_AEAD_encrypt(uint8_t* key,
  * @param ad_len length of associate data
  * OUTPUT:
  * @param plain a byte array for cipher text
-* @param tag 128-bit tag for verification
+ * @param tag 128-bit tag for verification
  */
 void HiAE_AEAD_decrypt(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* plain, 
     uint8_t* cipher, 
     size_t msg_len,
+    uint8_t* ad, 
+    size_t ad_len,
+    uint8_t* tag);
+
+/**
+ * encryption by HiAE
+ *
+ * INPUT:
+ * @param key 256bit: 32 byte
+ * @param iv 128bit: 16 byte
+ * @param plain message array
+ * @param msg_len length in byte of message
+ * OUTPUT:
+ * @param cipher a byte array for cipher text
+ */
+void HiAE_encrypt(uint8_t* key, 
+    uint8_t* iv, 
+    uint8_t* plain, 
+    uint8_t* cipher, 
+    size_t msg_len);
+
+/**
+ * decryption by HiAE
+ *
+ * INPUT:
+ * @param key 256bit: 32 byte
+ * @param iv 128bit: 16 byte
+ * @param cipher message array
+ * @param msg_len length in byte of message
+ * OUTPUT:
+ * @param plain a byte array for cipher text
+ */
+void HiAE_decrypt(uint8_t* key, 
+    uint8_t* iv, 
+    uint8_t* plain, 
+    uint8_t* cipher, 
+    size_t msg_len);
+
+/**
+ * verification by HiAE, only generate Tag
+ *
+ * INPUT:
+ * @param key 256bit: 32 byte
+ * @param iv 128bit: 16 byte
+ * @param ad associate data
+ * @param ad_len length of associate data
+ * OUTPUT:
+ * @param tag 128-bit tag for verification
+ */
+void HiAE_verification(uint8_t* key, 
+    uint8_t* iv, 
     uint8_t* ad, 
     size_t ad_len,
     uint8_t* tag);
