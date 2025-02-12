@@ -47,25 +47,28 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
     fseek(in, 0, SEEK_END);
     size_t total_size = ftell(in);
     fseek(in, 0, SEEK_SET);
+    fseek(out, 0, SEEK_SET);
     size_t read_size = 0;
+    size_t pad = 0;
     while (read_size < total_size) {
         size_t read = fread(buffer, 1, buffer_size, in);
         read_size += read;
         if (read_size > total_size) {
             read -= read_size - total_size;
             //pad to 16x bytes
-            size_t pad = 16 - (read % 16);
-            if (pad != 16) {
-                memset(buffer + read, 0, pad);
-                read += pad;
-            }
         }
-        HiAE_stream_encrypt(state, cipher, buffer, read);
-        fwrite(cipher, 1, read, out);
+        if (read & 15) {
+            pad = 16 - read & 15;
+            memset(buffer + read, 0, pad);
+        }
+        HiAE_stream_encrypt(state, cipher, buffer, read + pad);
+        fwrite(cipher, 1, read + pad, out);
     }
 
     HiAE_stream_finalize(state, 0, total_size, tag);
     fwrite(tag, 1, 16, out);
+    uint8_t pad_u8 = pad;
+    fwrite(&pad_u8, 1, 1, out);
 
     free(buffer);
     free(cipher);
@@ -106,10 +109,10 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
         return 0;
     }
 
-    uint8_t tag[16];
-    fseek(in, -16, SEEK_END);
-    size_t tag_len = fread(tag, 1, 16, in);
-    if (tag_len != 16) {
+    uint8_t tag_pad[17];
+    fseek(in, -17, SEEK_END);
+    size_t tag_len = fread(tag_pad, 1, 17, in);
+    if (tag_len != 17) {
         printf("Error: Could not read tag\n");
         free(buffer);
         free(plain);
@@ -129,24 +132,42 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
 
     //read in[0, -16] into buffer, decrypt, write to out, dont read last 16 bytes
     fseek(in, 0, SEEK_END);
-    size_t total_size = ftell(in) - 16;
+    size_t total_size = ftell(in) - 17;
     fseek(in, 0, SEEK_SET);
+    fseek(out, 0, SEEK_SET);
+
+    if (total_size % 16) {
+        printf("Error: file length not match!\n");
+        free(buffer);
+        free(plain);
+        fclose(in);
+        fclose(out);
+        return 0;
+    }
+
     size_t read_size = 0;
     while (read_size < total_size) {
         size_t read = fread(buffer, 1, buffer_size, in);
         read_size += read;
         if (read_size > total_size) {
             read -= read_size - total_size;
+            HiAE_stream_decrypt(state, plain, buffer, read);
+            fwrite(plain, 1, read - tag_pad[16], out);
         }
-        HiAE_stream_decrypt(state, plain, buffer, read);
-        fwrite(plain, 1, read, out);
+        else {
+            HiAE_stream_decrypt(state, plain, buffer, read);
+            fwrite(plain, 1, read, out);
+        }
     }
 
     uint8_t tag_check[16];
-    HiAE_stream_finalize(state, 0, total_size, tag_check);
+    HiAE_stream_finalize(state, 0, total_size - tag_pad[16], tag_check);
 
-    if (memcmp(tag, tag_check, 16) != 0) {
-        printf("Error: Tag mismatch\n");
+    if (memcmp(tag_pad, tag_check, 16) != 0) {
+        printf("error: Tag mismatch!\n");
+    }
+    else {
+        printf("Authorization Passed.\n");
     }
 
     free(buffer);
@@ -209,7 +230,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
-/* Test ENC:  
- *
- */
