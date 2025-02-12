@@ -874,3 +874,22 @@ void HiAE_AEAD_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* ciphe
     HiAE_stream_decrypt(state, plain, cipher, msg_len);
     HiAE_stream_finalize(state, ad_len, msg_len, tag);
 }
+
+void HiAE_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+    DATA128b state[STATE];
+    HiAE_stream_init(state, key, iv);
+    HiAE_stream_encrypt(state, cipher, plain, msg_len);
+}
+
+void HiAE_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+    DATA128b state[STATE];
+    HiAE_stream_init(state, key, iv);
+    HiAE_stream_decrypt(state, plain, cipher, msg_len);
+}
+
+void HiAE_verification(uint8_t* key, uint8_t* iv, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+    DATA128b state[STATE];
+    HiAE_stream_init(state, key, iv);
+    HiAE_stream_proc_ad(state, ad, ad_len);
+    HiAE_stream_finalize(state, ad_len, 0, tag);
+}
