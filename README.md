@@ -1,4 +1,5 @@
-# HiAE
+## HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency
+
 Official implementation of paper "[HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency](https://eprint.iacr.org/2025/377)"
 
 ## Design Rational
@@ -51,9 +52,9 @@ Their contributions were crucial in ensuring the scalability of HiAE across vari
 ## Cite This Work
 
 ```
-@misc{cryptoeprint:2025/377,
+@misc{HiAE,
       author = {Han Chen and Tao Huang and Phuong Pham and Shuang Wu},
-      title = {{HiAE}: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency},
+      title = {HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency},
       howpublished = {Cryptology {ePrint} Archive, Paper 2025/377},
       year = {2025},
       url = {https://eprint.iacr.org/2025/377}
