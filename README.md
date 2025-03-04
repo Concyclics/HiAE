@@ -1,5 +1,5 @@
 # HiAE
-Official implementation of paper "HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency"
+Official implementation of paper "[HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency](https://eprint.iacr.org/2025/377)"
 
 ## Design Rational
 
