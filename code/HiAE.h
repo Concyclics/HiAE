@@ -1,3 +1,4 @@
+
 #ifndef __HiAE__ALGO__
 #define __HiAE__ALGO__
 
@@ -106,8 +107,11 @@ void HiAE_stream_decrypt(DATA128b* state,
  * OUTPUT:
  * @param cipher a byte array for cipher text
  * @param tag 128-bit tag for verification
+ * RETURN:
+ * @SUCCESS 0
+ * @FAILED 1
  */
-void HiAE_AEAD_encrypt(uint8_t* key, 
+int HiAE_AEAD_encrypt(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* plain, 
     uint8_t* cipher, 
@@ -129,8 +133,11 @@ void HiAE_AEAD_encrypt(uint8_t* key,
  * OUTPUT:
  * @param plain a byte array for cipher text
  * @param tag 128-bit tag for verification
+ * RETURN:
+ * @SUCCESS 0
+ * @FAILED 1
  */
-void HiAE_AEAD_decrypt(uint8_t* key, 
+int HiAE_AEAD_decrypt(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* plain, 
     uint8_t* cipher, 
@@ -149,8 +156,11 @@ void HiAE_AEAD_decrypt(uint8_t* key,
  * @param msg_len length in byte of message
  * OUTPUT:
  * @param cipher a byte array for cipher text
+ * RETURN:
+ * @SUCCESS 0
+ * @FAILED 1
  */
-void HiAE_encrypt(uint8_t* key, 
+int HiAE_encrypt(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* plain, 
     uint8_t* cipher, 
@@ -166,8 +176,11 @@ void HiAE_encrypt(uint8_t* key,
  * @param msg_len length in byte of message
  * OUTPUT:
  * @param plain a byte array for cipher text
+ * RETURN:
+ * @SUCCESS 0
+ * @FAILED 1
  */
-void HiAE_decrypt(uint8_t* key, 
+int HiAE_decrypt(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* plain, 
     uint8_t* cipher, 
@@ -183,8 +196,11 @@ void HiAE_decrypt(uint8_t* key,
  * @param ad_len length of associate data
  * OUTPUT:
  * @param tag 128-bit tag for verification
+ * RETURN:
+ * @SUCCESS 0
+ * @FAILED 1
  */
-void HiAE_verification(uint8_t* key, 
+int HiAE_verification(uint8_t* key, 
     uint8_t* iv, 
     uint8_t* ad, 
     size_t ad_len,
