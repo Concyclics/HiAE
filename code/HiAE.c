@@ -329,8 +329,8 @@ void HiAE_stream_init(DATA128b* state, const uint8_t *key, const uint8_t *iv) {
     DATA128b tmp[STATE];
     INIT_UPDATE(c0);
     INIT_UPDATE(c0);
-    state[0] = SIMD_XOR(state[0], k0);
-    state[7] = SIMD_XOR(state[7], k1);
+    state[9] = SIMD_XOR(state[9], k0);
+    state[13] = SIMD_XOR(state[13], k1);
 }
 
 void HiAE_stream_proc_ad(DATA128b* state, const uint8_t *ad, size_t len) {
@@ -339,6 +339,8 @@ void HiAE_stream_proc_ad(DATA128b* state, const uint8_t *ad, size_t len) {
     size_t prefix = len - rest;
     const uint8_t *src = ad;
     DATA128b tmp[STATE], M[16];
+    if (len == 0)
+        return;
     for(; i < prefix; i += UNROLL_BLOCK_SIZE) {
         AD_UPDATE;
     }
@@ -367,6 +369,8 @@ void HiAE_stream_finalize(DATA128b* state, uint64_t ad_len, uint64_t plain_len, 
 void HiAE_stream_encrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size_t size) {
     size_t rest = size % UNROLL_BLOCK_SIZE;
     size_t prefix = size - rest;
+    if (size == 0)
+        return;
     DATA128b M[STATE], C[STATE], tmp[STATE], temp;
     #if defined(__VAES__) && defined(__x86_64__) && defined(__AVX512F__)
     // asm code optimized for VAES support devices
@@ -613,6 +617,8 @@ void HiAE_stream_encrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size
 void HiAE_stream_decrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size_t size) {
     size_t rest = size % UNROLL_BLOCK_SIZE;
     size_t prefix = size - rest;
+    if (size == 0)
+        return;
     DATA128b M[STATE], C[STATE], tmp[STATE], temp;
 
     #if defined(__VAES__) && defined(__x86_64__) && defined(__AVX512F__)
@@ -859,37 +865,72 @@ void HiAE_stream_decrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size
     }
 }
 
-void HiAE_AEAD_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+int HiAE_AEAD_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+    if(ad_len % BLOCK_SIZE != 0 || msg_len % BLOCK_SIZE != 0)
+    {
+        return 1;
+    }
+    
     DATA128b state[STATE];
     HiAE_stream_init(state, key, iv);
     HiAE_stream_proc_ad(state, ad, ad_len);
     HiAE_stream_encrypt(state, cipher, plain, msg_len);
     HiAE_stream_finalize(state, ad_len, msg_len, tag);
+
+    return 0;
 }
 
-void HiAE_AEAD_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+int HiAE_AEAD_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+    if(ad_len % BLOCK_SIZE != 0 || msg_len % BLOCK_SIZE != 0)
+    {
+        return 1;
+    }
+    
     DATA128b state[STATE];
     HiAE_stream_init(state, key, iv);
     HiAE_stream_proc_ad(state, ad, ad_len);
     HiAE_stream_decrypt(state, plain, cipher, msg_len);
     HiAE_stream_finalize(state, ad_len, msg_len, tag);
+
+    return 0;
 }
 
-void HiAE_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+int HiAE_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+    if(msg_len % BLOCK_SIZE != 0)
+    {
+        return -1;
+    }
+
     DATA128b state[STATE];
     HiAE_stream_init(state, key, iv);
     HiAE_stream_encrypt(state, cipher, plain, msg_len);
+
+    return 0;
 }
 
-void HiAE_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+int HiAE_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
+    if(msg_len % BLOCK_SIZE != 0)
+    {
+        return -1;
+    }
+    
     DATA128b state[STATE];
     HiAE_stream_init(state, key, iv);
     HiAE_stream_decrypt(state, plain, cipher, msg_len);
+
+    return 0;
 }
 
-void HiAE_verification(uint8_t* key, uint8_t* iv, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+int HiAE_verification(uint8_t* key, uint8_t* iv, uint8_t* ad, size_t ad_len, uint8_t* tag) {
+    if(ad_len % BLOCK_SIZE != 0)
+    {
+        return -1;
+    }
+    
     DATA128b state[STATE];
     HiAE_stream_init(state, key, iv);
     HiAE_stream_proc_ad(state, ad, ad_len);
     HiAE_stream_finalize(state, ad_len, 0, tag);
+
+    return 0;
 }
