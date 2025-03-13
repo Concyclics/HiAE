@@ -43,7 +43,7 @@ I would like to extend my heartfelt thanks to the following individuals for thei
 - [ZHANG Tianle @ SCUT](mailto:terryjoy0111@gmail.com)
 - [ZHU Di @ SYSU](mailto:zhud29@mail3.sysu.edu.cn)
 - [YE Fengwei @ SYSU](https://github.com/ATYXXA)
-- [ZHENG Haowen @ NCTU](https://github.com/IslandCreatureCTU)
+- [ZHENG Haowen @ NCKU](https://github.com/IslandCreatureCTU)
 - [FU Ze @ BIT](https://github.com/Endericedragon)
 - [SU Changran @ NJU](mailto:2113848254@qq.com)
 
