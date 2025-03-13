@@ -898,7 +898,7 @@ int HiAE_AEAD_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher
 int HiAE_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
     if(msg_len % BLOCK_SIZE != 0)
     {
-        return -1;
+        return 1;
     }
 
     DATA128b state[STATE];
@@ -911,7 +911,7 @@ int HiAE_encrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, siz
 int HiAE_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, size_t msg_len) {
     if(msg_len % BLOCK_SIZE != 0)
     {
-        return -1;
+        return 1;
     }
     
     DATA128b state[STATE];
@@ -924,7 +924,7 @@ int HiAE_decrypt(uint8_t* key, uint8_t* iv, uint8_t* plain, uint8_t* cipher, siz
 int HiAE_verification(uint8_t* key, uint8_t* iv, uint8_t* ad, size_t ad_len, uint8_t* tag) {
     if(ad_len % BLOCK_SIZE != 0)
     {
-        return -1;
+        return 1;
     }
     
     DATA128b state[STATE];
