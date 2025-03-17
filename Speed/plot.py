@@ -25,7 +25,7 @@ cipher_order = (
 
 # %%
 import matplotlib.pyplot as plt
-sns.set_theme("poster", style="whitegrid", palette="")
+sns.set_theme("poster", style="whitegrid", palette="terrain")
 plt.figure(figsize=(16, 8))
 sns.barplot(
     data=ds_max[~ds_max["Cipher"].isin(["SNOW-V-GCM"]) & ds_max["Mode"].isin(["AEAD"]) & ds_max["CPU"].isin(["AMD Ryzen 9 7950X", "Intel Xeon W9-3495X", "HiSilicon Kunpeng 920X", "Apple M3 Pro"])],
