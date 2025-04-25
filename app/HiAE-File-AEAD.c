@@ -5,7 +5,7 @@
 #include <time.h>
 #include <stdint.h>
 
-size_t encrypt_file(const char* input_file, const char* output_file, const char* key, const char* iv, size_t buffer_size) {
+size_t encrypt_file(const char* input_file, const char* output_file, const uint8_t* key, const uint8_t* iv, size_t buffer_size) {
     FILE* in = fopen(input_file, "rb");
     if (in == NULL) {
         printf("Error: Could not open input file\n");
@@ -15,13 +15,6 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
     if (out == NULL) {
         printf("Error: Could not open output file\n");
         fclose(in);
-        return 0;
-    }
-
-    if (strlen(key) != 32 || strlen(iv) != 16) {
-        printf("Error: Key and IV must be 32 and 16 characters long respectively\n");
-        fclose(in);
-        fclose(out);
         return 0;
     }
 
@@ -51,13 +44,8 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
 
     uint8_t* tag = (uint8_t*)malloc(16);
 
-    uint8_t key_data[32];
-    uint8_t iv_data[16];
-    memcpy(key_data, key, 32);
-    memcpy(iv_data, iv, 16);
-
     DATA128b state[16];
-    HiAE_stream_init(state, key_data, iv_data);
+    HiAE_stream_init(state, key, iv);
     fseek(in, 0, SEEK_END);
     size_t total_size = ftell(in);
     fseek(in, 0, SEEK_SET);
@@ -86,7 +74,7 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
     return total_size;
 }
 
-size_t decrypt_file(const char* input_file, const char* output_file, const char* key, const char* iv, size_t buffer_size) {
+size_t decrypt_file(const char* input_file, const char* output_file, const uint8_t* key, const uint8_t* iv, size_t buffer_size) {
     FILE* in = fopen(input_file, "rb");
     if (in == NULL) {
         printf("Error: Could not open input file\n");
@@ -130,13 +118,8 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
     
     fseek(in, 0, SEEK_SET);
 
-    uint8_t key_data[32];
-    uint8_t iv_data[16];
-    memcpy(key_data, key, 32);
-    memcpy(iv_data, iv, 16);
-
     DATA128b state[16];
-    HiAE_stream_init(state, key_data, iv_data);
+    HiAE_stream_init(state, key, iv);
 
     //read in[0, -16] into buffer, decrypt, write to out, dont read last 16 bytes
     fseek(in, 0, SEEK_END);
@@ -193,15 +176,26 @@ int main(int argc, char** argv) {
     }
 
     // check key and iv length
-    if (strlen(argv[4]) != 32) {
-        printf("Error: Key must be 32 characters\n");
+    if (strlen(argv[4]) > 64) {
+        printf("Error: Key must be in 32 characters\n");
         return 1;
     }
-    if (strlen(argv[5]) != 16) {
-        printf("Error: IV must be 16 characters\n");
+    if (strlen(argv[5]) > 32) {
+        printf("Error: IV must be in 16 characters\n");
         return 1;
     }
 
+    uint8_t key[32];
+    uint8_t iv[16];
+    memset(key, 0, 32);
+    memset(iv, 0, 16);
+    //str to hex
+    for (int i = 0; i < strlen(argv[4]); i += 2) {
+        sscanf(argv[4] + i, "%2hhx", &key[i / 2]);
+    }
+    for (int i = 0; i < strlen(argv[5]); i += 2) {
+        sscanf(argv[5] + i, "%2hhx", &iv[i / 2]);
+    }
     size_t buffer_size = 4 * 1024 * 1024; // default buffer size is 4MB
 
     if (argc > 6) {
@@ -213,16 +207,26 @@ int main(int argc, char** argv) {
         buffer_size = buffer_size_temp * 1024 * 1024; // convert MB to bytes
     }
 
+    printf("KEY = ");
+    for (int i = 0; i < 32; i++) {
+        printf("%02x", key[i]);
+    }
+    printf("\nIV = ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x", iv[i]);
+    }
+    printf("\n");
+
     if (strcmp(argv[1], "encrypt") == 0) {
         clock_t start = clock();
-        size_t file_size = encrypt_file(argv[2], argv[3], argv[4], argv[5], buffer_size);
+        size_t file_size = encrypt_file(argv[2], argv[3], key, iv, buffer_size);
         clock_t end = clock();
         printf("Encrypted %s to %s (%lu bytes) in %f seconds\n", argv[2], argv[3], file_size, (double)(end - start) / CLOCKS_PER_SEC);
         double speed = (double)file_size / (1024 * 1024 * 1024) / ((double)(end - start) / CLOCKS_PER_SEC);
         printf("Speed: %f GB/s\n", speed);
     } else if (strcmp(argv[1], "decrypt") == 0) {
         clock_t start = clock();
-        size_t file_size = decrypt_file(argv[2], argv[3], argv[4], argv[5], buffer_size);
+        size_t file_size = decrypt_file(argv[2], argv[3], key, iv, buffer_size);
         clock_t end = clock();
         printf("Decrypted %s to %s (%lu bytes) in %f seconds\n", argv[2], argv[3], file_size, (double)(end - start) / CLOCKS_PER_SEC);
         double speed = (double)file_size / (1024 * 1024 * 1024) / ((double)(end - start) / CLOCKS_PER_SEC);
