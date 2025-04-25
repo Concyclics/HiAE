@@ -18,6 +18,20 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
         return 0;
     }
 
+    if (strlen(key) != 32 || strlen(iv) != 16) {
+        printf("Error: Key and IV must be 32 and 16 characters long respectively\n");
+        fclose(in);
+        fclose(out);
+        return 0;
+    }
+
+    if (buffer_size % 16 != 0) {
+        printf("Error: Buffer size must be a multiple of 16\n");
+        fclose(in);
+        fclose(out);
+        return 0;
+    }
+
     uint8_t* buffer = (uint8_t*)malloc(buffer_size);
     if (buffer == NULL) {
         printf("Error: Could not allocate buffer\n");
@@ -49,7 +63,6 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
     fseek(in, 0, SEEK_SET);
     fseek(out, 0, SEEK_SET);
     size_t read_size = 0;
-    size_t pad = 0;
     while (read_size < total_size) {
         size_t read = fread(buffer, 1, buffer_size, in);
         read_size += read;
@@ -57,18 +70,12 @@ size_t encrypt_file(const char* input_file, const char* output_file, const char*
             read -= read_size - total_size;
             //pad to 16x bytes
         }
-        if (read & 15) {
-            pad = 16 - read & 15;
-            memset(buffer + read, 0, pad);
-        }
-        HiAE_stream_encrypt(state, cipher, buffer, read + pad);
-        fwrite(cipher, 1, read + pad, out);
+        HiAE_stream_encrypt(state, cipher, buffer, read);
+        fwrite(cipher, 1, read, out);
     }
 
     HiAE_stream_finalize(state, 0, total_size, tag);
     fwrite(tag, 1, 16, out);
-    uint8_t pad_u8 = pad;
-    fwrite(&pad_u8, 1, 1, out);
 
     free(buffer);
     free(cipher);
@@ -109,10 +116,10 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
         return 0;
     }
 
-    uint8_t tag_pad[17];
-    fseek(in, -17, SEEK_END);
-    size_t tag_len = fread(tag_pad, 1, 17, in);
-    if (tag_len != 17) {
+    uint8_t tag[16];
+    fseek(in, -16, SEEK_END);
+    size_t tag_len = fread(tag, 1, 16, in);
+    if (tag_len != 16) {
         printf("Error: Could not read tag\n");
         free(buffer);
         free(plain);
@@ -120,6 +127,7 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
         fclose(out);
         return 0;
     }
+    
     fseek(in, 0, SEEK_SET);
 
     uint8_t key_data[32];
@@ -132,12 +140,12 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
 
     //read in[0, -16] into buffer, decrypt, write to out, dont read last 16 bytes
     fseek(in, 0, SEEK_END);
-    size_t total_size = ftell(in) - 17;
+    size_t total_size = ftell(in);
     fseek(in, 0, SEEK_SET);
     fseek(out, 0, SEEK_SET);
 
-    if (total_size % 16) {
-        printf("Error: file length not match!\n");
+    if (total_size < 16) {
+        printf("Error: File Destroyed by tag\n");
         free(buffer);
         free(plain);
         fclose(in);
@@ -145,25 +153,25 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
         return 0;
     }
 
+    total_size -= 16;
+
     size_t read_size = 0;
-    while (read_size < total_size) {
+    while (read_size + buffer_size < total_size) {
         size_t read = fread(buffer, 1, buffer_size, in);
         read_size += read;
-        if (read_size > total_size) {
-            read -= read_size - total_size;
-            HiAE_stream_decrypt(state, plain, buffer, read);
-            fwrite(plain, 1, read - tag_pad[16], out);
-        }
-        else {
-            HiAE_stream_decrypt(state, plain, buffer, read);
-            fwrite(plain, 1, read, out);
-        }
+        HiAE_stream_decrypt(state, plain, buffer, read);
+        fwrite(plain, 1, read, out);
+    }
+    if (read_size < total_size) {
+        size_t read = fread(buffer, 1, total_size - read_size, in);
+        HiAE_stream_decrypt(state, plain, buffer, read);
+        fwrite(plain, 1, read, out);
     }
 
     uint8_t tag_check[16];
-    HiAE_stream_finalize(state, 0, total_size - tag_pad[16], tag_check);
+    HiAE_stream_finalize(state, 0, total_size, tag_check);
 
-    if (memcmp(tag_pad, tag_check, 16) != 0) {
+    if (memcmp(tag, tag_check, 16) != 0) {
         printf("error: Tag mismatch!\n");
     }
     else {
@@ -180,7 +188,7 @@ size_t decrypt_file(const char* input_file, const char* output_file, const char*
 
 int main(int argc, char** argv) {
     if (argc < 5) {
-        printf("Usage: %s <encrypt/decrypt> <input_file> <output_file> <key> <iv> [buffer_size]\n", argv[0]);
+        printf("Usage: %s <encrypt/decrypt> <input_file> <output_file> <key> <iv> [buffer_size (MB)]\n", argv[0]);
         return 1;
     }
 
@@ -194,19 +202,15 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    size_t buffer_size = 65536;
+    size_t buffer_size = 4 * 1024 * 1024; // default buffer size is 4MB
 
     if (argc > 6) {
         size_t buffer_size_temp = atoi(argv[6]);
-        if (buffer_size_temp < 16) {
-            printf("Error: Buffer size must be at least 16\n");
+        if (buffer_size_temp < 1) {
+            printf("Error: Buffer size must be greater than 0\n");
             return 1;
         }
-        if (buffer_size_temp % 16 != 0) {
-            printf("Error: Buffer size must be a multiple of 16\n");
-            return 1;
-        }
-        buffer_size = buffer_size_temp;
+        buffer_size = buffer_size_temp * 1024 * 1024; // convert MB to bytes
     }
 
     if (strcmp(argv[1], "encrypt") == 0) {

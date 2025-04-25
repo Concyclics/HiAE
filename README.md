@@ -24,13 +24,11 @@ The File encryption will auto append the AEAD tag after the file for integrity p
 
 **compile**
 ```bash
-#For x86
 gcc -O3 -march=native -I code/ code/HiAE.c app/file_enc.c -o FileHiAE
-#For armv8
-gcc -O3 -march=armv8-a+crypto -I code/ code/HiAE.c app/file_enc.c -o FileHiAE
 ```
 
 **Usage**
+
 ```bash
 ./FileHiAE <encrypt/decrypt> <input_file> <output_file> <key: 32 chars> <iv: 16 chars> [buffer_size: Default 65536]
 ```
