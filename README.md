@@ -30,7 +30,7 @@ gcc -O3 -march=native -I code/ code/HiAE.c app/file_enc.c -o FileHiAE
 **Usage**
 
 ```bash
-./FileHiAE <encrypt/decrypt> <input_file> <output_file> <key: 32 chars> <iv: 16 chars> [buffer_size: Default 65536]
+./FileHiAE <encrypt/decrypt> <input_file> <output_file> <key: 32 chars> <iv: 16 chars> [buffer_size(MB): Default 4MB]
 ```
 
 ## Acknowledgements
