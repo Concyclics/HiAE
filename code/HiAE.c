@@ -351,202 +351,202 @@ void HiAE_stream_proc_ad(DATA128b* state, const uint8_t *ad, size_t len) {
     DATA128b tmp[STATE], M[16];
     if (len == 0)
         return;
-        #if defined(__VAES__) && defined(__x86_64__) && defined(__AVX512F__)
-        // asm code optimized for VAES support devices
-        
-        // xmm0-xmm15 are used for State
-        // xmm16-xmm23 are used for M
-        // xmm24-xmm31 are used for C
+    #if defined(__VAES__) && defined(__x86_64__) && defined(__AVX512F__)
+    // asm code optimized for VAES support devices
     
-        __asm__ volatile (
-            // Load state into xmm0-xmm15
-            "vmovdqa64 (%3), %%xmm0;"    // state[0]
-            "vmovdqa64 16(%3), %%xmm1;"  // state[1]
-            "vmovdqa64 32(%3), %%xmm2;"  // state[2]
-            "vmovdqa64 48(%3), %%xmm3;"  // state[3]
-            "vmovdqa64 64(%3), %%xmm4;"  // state[4]
-            "vmovdqa64 80(%3), %%xmm5;"  // state[5]
-            "vmovdqa64 96(%3), %%xmm6;"  // state[6]
-            "vmovdqa64 112(%3), %%xmm7;" // state[7]
-            "vmovdqa64 128(%3), %%xmm8;" // state[8]
-            "vmovdqa64 144(%3), %%xmm9;" // state[9]
-            "vmovdqa64 160(%3), %%xmm10;"// state[10]
-            "vmovdqa64 176(%3), %%xmm11;"// state[11]
-            "vmovdqa64 192(%3), %%xmm12;"// state[12]
-            "vmovdqa64 208(%3), %%xmm13;"// state[13]
-            "vmovdqa64 224(%3), %%xmm14;"// state[14]
-            "vmovdqa64 240(%3), %%xmm15;"// state[15]
-    
-            "movq $0, %%rax;"          // Initialize counter i = 0
-            "1:;"                      // Loop start
-            "cmpq %2, %%rax;"          // Compare i and prefix
-            "jge 2f;"                  // If i >= prefix, jump to loop end
-    
-            // round 1
-            "vmovdqu64 0(%1, %%rax), %%xmm16;"    // Load M[0] into xmm16
-            "vpxorq %%xmm0, %%xmm1, %%xmm24;"      // C[0] = SIMD_XOR(S[0], S[1])
-            "vaesenc %%xmm16, %%xmm24, %%xmm24;"  // C[0] = AESENC(C[0], M[0])
-            "vaesenc %%xmm24, %%xmm13, %%xmm0;"   // S[16] = AESENC(S[13], C[0])
-            "vpxorq %%xmm3, %%xmm16, %%xmm3;"      // S[3] = SIMD_XOR(S[3], M[0])
-            "vpxorq %%xmm13, %%xmm16, %%xmm13;"    // S[13] = SIMD_XOR(S[13], M[0])
-    
-            // round 2
-            "vmovdqu64 16(%1, %%rax), %%xmm17;"   // Load M[1] into xmm17
-            "vpxorq %%xmm1, %%xmm2, %%xmm25;"      // C[1] = SIMD_XOR(S[1], S[2])
-            "vaesenc %%xmm17, %%xmm25, %%xmm25;"  // C[1] = AESENC(C[1], M[1])
-            "vaesenc %%xmm25, %%xmm14, %%xmm1;"   // S[17] = AESENC(S[14], C[1])
-            "vpxorq %%xmm4, %%xmm17, %%xmm4;"      // S[4] = SIMD_XOR(S[4], M[1])
-            "vpxorq %%xmm14, %%xmm17, %%xmm14;"    // S[14] = SIMD_XOR(S[14], M[1])
-    
-            // round 3
-            "vmovdqu64 32(%1, %%rax), %%xmm18;"   // Load M[2] into xmm18
-            "vpxorq %%xmm2, %%xmm3, %%xmm26;"      // C[2] = SIMD_XOR(S[2], S[3])
-            "vaesenc %%xmm18, %%xmm26, %%xmm26;"  // C[2] = AESENC(C[2], M[2])
-            "vaesenc %%xmm26, %%xmm15, %%xmm2;"   // S[18] = AESENC(S[15], C[2])
-            "vpxorq %%xmm5, %%xmm18, %%xmm5;"      // S[5] = SIMD_XOR(S[5], M[2])
-            "vpxorq %%xmm15, %%xmm18, %%xmm15;"    // S[15] = SIMD_XOR(S[15], M[2])
-    
-            // round 4
-            "vmovdqu64 48(%1, %%rax), %%xmm19;"   // Load M[3] into xmm19
-            "vpxorq %%xmm3, %%xmm4, %%xmm27;"      // C[3] = SIMD_XOR(S[3], S[4])
-            "vaesenc %%xmm19, %%xmm27, %%xmm27;"  // C[3] = AESENC(C[3], M[3])
-            "vaesenc %%xmm27, %%xmm0, %%xmm3;"    // S[19] = AESENC(S[0], C[3])
-            "vpxorq %%xmm6, %%xmm19, %%xmm6;"      // S[6] = SIMD_XOR(S[6], M[3])
-            "vpxorq %%xmm0, %%xmm19, %%xmm0;"      // S[0] = SIMD_XOR(S[0], M[3])
-    
-            // round 5
-            "vmovdqu64 64(%1, %%rax), %%xmm20;"   // Load M[4] into xmm20
-            "vpxorq %%xmm4, %%xmm5, %%xmm28;"      // C[4] = SIMD_XOR(S[4], S[5])
-            "vaesenc %%xmm20, %%xmm28, %%xmm28;"  // C[4] = AESENC(C[4], M[4])
-            "vaesenc %%xmm28, %%xmm1, %%xmm4;"    // S[20] = AESENC(S[1], C[4])
-            "vpxorq %%xmm7, %%xmm20, %%xmm7;"      // S[7] = SIMD_XOR(S[7], M[4])
-            "vpxorq %%xmm1, %%xmm20, %%xmm1;"      // S[1] = SIMD_XOR(S[1], M[4])
-    
-            // round 6
-            "vmovdqu64 80(%1, %%rax), %%xmm21;"   // Load M[5] into xmm21
-            "vpxorq %%xmm5, %%xmm6, %%xmm29;"      // C[5] = SIMD_XOR(S[5], S[6])
-            "vaesenc %%xmm21, %%xmm29, %%xmm29;"  // C[5] = AESENC(C[5], M[5])
-            "vaesenc %%xmm29, %%xmm2, %%xmm5;"    // S[21] = AESENC(S[2], C[5])
-            "vpxorq %%xmm8, %%xmm21, %%xmm8;"      // S[8] = SIMD_XOR(S[8], M[5])
-            "vpxorq %%xmm2, %%xmm21, %%xmm2;"      // S[2] = SIMD_XOR(S[2], M[5])
-    
-            // round 7
-            "vmovdqu64 96(%1, %%rax), %%xmm22;"   // Load M[6] into xmm22
-            "vpxorq %%xmm6, %%xmm7, %%xmm30;"      // C[6] = SIMD_XOR(S[6], S[7])
-            "vaesenc %%xmm22, %%xmm30, %%xmm30;"  // C[6] = AESENC(C[6], M[6])
-            "vaesenc %%xmm30, %%xmm3, %%xmm6;"    // S[22] = AESENC(S[3], C[6])
-            "vpxorq %%xmm9, %%xmm22, %%xmm9;"      // S[9] = SIMD_XOR(S[9], M[6])
-            "vpxorq %%xmm3, %%xmm22, %%xmm3;"      // S[3] = SIMD_XOR(S[3], M[6])
-    
-            // round 8
-            "vmovdqu64 112(%1, %%rax), %%xmm23;"  // Load M[7] into xmm23
-            "vpxorq %%xmm7, %%xmm8, %%xmm31;"      // C[7] = SIMD_XOR(S[7], S[8])
-            "vaesenc %%xmm23, %%xmm31, %%xmm31;"  // C[7] = AESENC(C[7], M[7])
-            "vaesenc %%xmm31, %%xmm4, %%xmm7;"    // S[23] = AESENC(S[4], C[7])
-            "vpxorq %%xmm10, %%xmm23, %%xmm10;"    // S[10] = SIMD_XOR(S[10], M[7])
-            "vpxorq %%xmm4, %%xmm23, %%xmm4;"      // S[4] = SIMD_XOR(S[4], M[7])
-    
-            // round 9
-            "vmovdqa64 128(%1, %%rax), %%xmm16;"    // Load M[8] into xmm16
-            "vpxorq %%xmm8, %%xmm9, %%xmm24;"        // C[8] = SIMD_XOR(S[8], S[9])
-            "vaesenc %%xmm16, %%xmm24, %%xmm24;"    // C[8] = AESENC(M[8], C[8])
-            "vaesenc %%xmm24, %%xmm5, %%xmm8;"      // S[24] = AESENC(C[8], S[5])
-            "vpxorq %%xmm11, %%xmm16, %%xmm11;"      // S[11] = SIMD_XOR(S[11], M[8])
-            "vpxorq %%xmm5, %%xmm16, %%xmm5;"        // S[5] = SIMD_XOR(S[5], M[8])
-    
-            // round 10
-            "vmovdqa64 144(%1, %%rax), %%xmm17;"    // Load M[9] into xmm17
-            "vpxorq %%xmm9, %%xmm10, %%xmm25;"       // C[9] = SIMD_XOR(S[9], S[10])
-            "vaesenc %%xmm17, %%xmm25, %%xmm25;"    // C[9] = AESENC(M[9], C[9])
-            "vaesenc %%xmm25, %%xmm6, %%xmm9;"      // S[25] = AESENC(C[9], S[6])
-            "vpxorq %%xmm12, %%xmm17, %%xmm12;"      // S[12] = SIMD_XOR(S[12], M[9])
-            "vpxorq %%xmm6, %%xmm17, %%xmm6;"        // S[6] = SIMD_XOR(S[6], M[9])
-    
-            // round 11
-            "vmovdqa64 160(%1, %%rax), %%xmm18;"    // Load M[10] into xmm18
-            "vpxorq %%xmm10, %%xmm11, %%xmm26;"      // C[10] = SIMD_XOR(S[10], S[11])
-            "vaesenc %%xmm18, %%xmm26, %%xmm26;"    // C[10] = AESENC(M[10], C[10])
-            "vaesenc %%xmm26, %%xmm7, %%xmm10;"     // S[26] = AESENC(C[10], S[7])
-            "vpxorq %%xmm13, %%xmm18, %%xmm13;"      // S[13] = SIMD_XOR(S[13], M[10])
-            "vpxorq %%xmm7, %%xmm18, %%xmm7;"        // S[7] = SIMD_XOR(S[7], M[10])
-    
-            // round 12
-            "vmovdqa64 176(%1, %%rax), %%xmm19;"    // Load M[11] into xmm19
-            "vpxorq %%xmm11, %%xmm12, %%xmm27;"      // C[11] = SIMD_XOR(S[11], S[12])
-            "vaesenc %%xmm19, %%xmm27, %%xmm27;"    // C[11] = AESENC(M[11], C[11])
-            "vaesenc %%xmm27, %%xmm8, %%xmm11;"     // S[27] = AESENC(C[11], S[8])
-            "vpxorq %%xmm14, %%xmm19, %%xmm14;"      // S[14] = SIMD_XOR(S[14], M[11])
-            "vpxorq %%xmm8, %%xmm19, %%xmm8;"        // S[8] = SIMD_XOR(S[8], M[11])
-    
-            // round 13
-            "vmovdqa64 192(%1, %%rax), %%xmm20;"    // Load M[12] into xmm20
-            "vpxorq %%xmm12, %%xmm13, %%xmm28;"      // C[12] = SIMD_XOR(S[12], S[13])
-            "vaesenc %%xmm20, %%xmm28, %%xmm28;"    // C[12] = AESENC(M[12], C[12])
-            "vaesenc %%xmm28, %%xmm9, %%xmm12;"     // S[28] = AESENC(C[12], S[9])
-            "vpxorq %%xmm15, %%xmm20, %%xmm15;"      // S[15] = SIMD_XOR(S[15], M[12])
-            "vpxorq %%xmm9, %%xmm20, %%xmm9;"        // S[9] = SIMD_XOR(S[9], M[12])
-    
-            // round 14
-            "vmovdqa64 208(%1, %%rax), %%xmm21;"    // Load M[13] into xmm21
-            "vpxorq %%xmm13, %%xmm14, %%xmm29;"      // C[13] = SIMD_XOR(S[13], S[14])
-            "vaesenc %%xmm21, %%xmm29, %%xmm29;"    // C[13] = AESENC(M[13], C[13])
-            "vaesenc %%xmm29, %%xmm10, %%xmm13;"    // S[29] = AESENC(C[13], S[10])
-            "vpxorq %%xmm0, %%xmm21, %%xmm0;"        // S[0] = SIMD_XOR(S[0], M[13])
-            "vpxorq %%xmm10, %%xmm21, %%xmm10;"      // S[10] = SIMD_XOR(S[10], M[13])
-    
-            // round 15
-            "vmovdqa64 224(%1, %%rax), %%xmm22;"    // Load M[14] into xmm22
-            "vpxorq %%xmm14, %%xmm15, %%xmm30;"      // C[14] = SIMD_XOR(S[14], S[15])
-            "vaesenc %%xmm22, %%xmm30, %%xmm30;"    // C[14] = AESENC(M[14], C[14])
-            "vaesenc %%xmm30, %%xmm11, %%xmm14;"    // S[30] = AESENC(C[14], S[11])
-            "vpxorq %%xmm1, %%xmm22, %%xmm1;"        // S[1] = SIMD_XOR(S[1], M[14])
-            "vpxorq %%xmm11, %%xmm22, %%xmm11;"      // S[11] = SIMD_XOR(S[11], M[14])
-    
-            // round 16
-            "vmovdqa64 240(%1, %%rax), %%xmm23;"    // Load M[15] into xmm23
-            "vpxorq %%xmm15, %%xmm0, %%xmm31;"       // C[15] = SIMD_XOR(S[15], S[0])
-            "vaesenc %%xmm23, %%xmm31, %%xmm31;"    // C[15] = AESENC(M[15], C[15])
-            "vaesenc %%xmm31, %%xmm12, %%xmm15;"    // S[31] = AESENC(C[15], S[12])
-            "vpxorq %%xmm2, %%xmm23, %%xmm2;"        // S[2] = SIMD_XOR(S[2], M[15])
-            "vpxorq %%xmm12, %%xmm23, %%xmm12;"      // S[12] = SIMD_XOR(S[12], M[15])
-    
-                    
-            "addq $256, %%rax;"                 // i += 256
-            "jmp 1b;"                           // Loop back
-    
-            "2:;"                               // Loop end
-    
-            // Write back state
-            "vmovdqa64 %%xmm0, (%3);"         
-            "vmovdqa64 %%xmm1, 16(%3);"     
-            "vmovdqa64 %%xmm2, 32(%3);"     
-            "vmovdqa64 %%xmm3, 48(%3);"        
-            "vmovdqa64 %%xmm4, 64(%3);"     
-            "vmovdqa64 %%xmm5, 80(%3);"    
-            "vmovdqa64 %%xmm6, 96(%3);"    
-            "vmovdqa64 %%xmm7, 112(%3);"    
-            "vmovdqa64 %%xmm8, 128(%3);"       
-            "vmovdqa64 %%xmm9, 144(%3);"       
-            "vmovdqa64 %%xmm10, 160(%3);"    
-            "vmovdqa64 %%xmm11, 176(%3);"    
-            "vmovdqa64 %%xmm12, 192(%3);"     
-            "vmovdqa64 %%xmm13, 208(%3);"   
-            "vmovdqa64 %%xmm14, 224(%3);"    
-            "vmovdqa64 %%xmm15, 240(%3);" 
-    
-            :
-            : "r"(state), "r"(ad), "r"(prefix)  // input dst, src, prefix, state
-            : "%rax", "%xmm0", "%xmm1", "%xmm2", "%xmm3",
-              "%xmm4", "%xmm5", "%xmm6", "%xmm7",
-              "%xmm8", "%xmm9", "%xmm10", "%xmm11",
-              "%xmm12", "%xmm13", "%xmm14", "%xmm15",
-              "%xmm16", "%xmm17", "%xmm18", "%xmm19",
-              "%xmm20", "%xmm21", "%xmm22", "%xmm23",
-              "%xmm24", "%xmm25", "%xmm26", "%xmm27",
-              "%xmm28", "%xmm29", "%xmm30", "%xmm31",
-              "memory"
-        );
-    
+    // xmm0-xmm15 are used for State
+    // xmm16-xmm23 are used for M
+    // xmm24-xmm31 are used for C
+
+    __asm__ volatile (
+        // Load state into xmm0-xmm15
+        "vmovdqa64 (%0), %%xmm0;"    // state[0]
+        "vmovdqa64 16(%0), %%xmm1;"  // state[1]
+        "vmovdqa64 32(%0), %%xmm2;"  // state[2]
+        "vmovdqa64 48(%0), %%xmm3;"  // state[3]
+        "vmovdqa64 64(%0), %%xmm4;"  // state[4]
+        "vmovdqa64 80(%0), %%xmm5;"  // state[5]
+        "vmovdqa64 96(%0), %%xmm6;"  // state[6]
+        "vmovdqa64 112(%0), %%xmm7;" // state[7]
+        "vmovdqa64 128(%0), %%xmm8;" // state[8]
+        "vmovdqa64 144(%0), %%xmm9;" // state[9]
+        "vmovdqa64 160(%0), %%xmm10;"// state[10]
+        "vmovdqa64 176(%0), %%xmm11;"// state[11]
+        "vmovdqa64 192(%0), %%xmm12;"// state[12]
+        "vmovdqa64 208(%0), %%xmm13;"// state[13]
+        "vmovdqa64 224(%0), %%xmm14;"// state[14]
+        "vmovdqa64 240(%0), %%xmm15;"// state[15]
+
+        "movq $0, %%rax;"          // Initialize counter i = 0
+        "1:;"                      // Loop start
+        "cmpq %2, %%rax;"          // Compare i and prefix
+        "jge 2f;"                  // If i >= prefix, jump to loop end
+
+        // round 1
+        "vmovdqu64 0(%1, %%rax), %%xmm16;"    // Load M[0] into xmm16
+        "vpxorq %%xmm0, %%xmm1, %%xmm24;"      // C[0] = SIMD_XOR(S[0], S[1])
+        "vaesenc %%xmm16, %%xmm24, %%xmm24;"  // C[0] = AESENC(C[0], M[0])
+        "vaesenc %%xmm24, %%xmm13, %%xmm0;"   // S[16] = AESENC(S[13], C[0])
+        "vpxorq %%xmm3, %%xmm16, %%xmm3;"      // S[3] = SIMD_XOR(S[3], M[0])
+        "vpxorq %%xmm13, %%xmm16, %%xmm13;"    // S[13] = SIMD_XOR(S[13], M[0])
+
+        // round 2
+        "vmovdqu64 16(%1, %%rax), %%xmm17;"   // Load M[1] into xmm17
+        "vpxorq %%xmm1, %%xmm2, %%xmm25;"      // C[1] = SIMD_XOR(S[1], S[2])
+        "vaesenc %%xmm17, %%xmm25, %%xmm25;"  // C[1] = AESENC(C[1], M[1])
+        "vaesenc %%xmm25, %%xmm14, %%xmm1;"   // S[17] = AESENC(S[14], C[1])
+        "vpxorq %%xmm4, %%xmm17, %%xmm4;"      // S[4] = SIMD_XOR(S[4], M[1])
+        "vpxorq %%xmm14, %%xmm17, %%xmm14;"    // S[14] = SIMD_XOR(S[14], M[1])
+
+        // round 3
+        "vmovdqu64 32(%1, %%rax), %%xmm18;"   // Load M[2] into xmm18
+        "vpxorq %%xmm2, %%xmm3, %%xmm26;"      // C[2] = SIMD_XOR(S[2], S[3])
+        "vaesenc %%xmm18, %%xmm26, %%xmm26;"  // C[2] = AESENC(C[2], M[2])
+        "vaesenc %%xmm26, %%xmm15, %%xmm2;"   // S[18] = AESENC(S[15], C[2])
+        "vpxorq %%xmm5, %%xmm18, %%xmm5;"      // S[5] = SIMD_XOR(S[5], M[2])
+        "vpxorq %%xmm15, %%xmm18, %%xmm15;"    // S[15] = SIMD_XOR(S[15], M[2])
+
+        // round 4
+        "vmovdqu64 48(%1, %%rax), %%xmm19;"   // Load M[3] into xmm19
+        "vpxorq %%xmm3, %%xmm4, %%xmm27;"      // C[3] = SIMD_XOR(S[3], S[4])
+        "vaesenc %%xmm19, %%xmm27, %%xmm27;"  // C[3] = AESENC(C[3], M[3])
+        "vaesenc %%xmm27, %%xmm0, %%xmm3;"    // S[19] = AESENC(S[0], C[3])
+        "vpxorq %%xmm6, %%xmm19, %%xmm6;"      // S[6] = SIMD_XOR(S[6], M[3])
+        "vpxorq %%xmm0, %%xmm19, %%xmm0;"      // S[0] = SIMD_XOR(S[0], M[3])
+
+        // round 5
+        "vmovdqu64 64(%1, %%rax), %%xmm20;"   // Load M[4] into xmm20
+        "vpxorq %%xmm4, %%xmm5, %%xmm28;"      // C[4] = SIMD_XOR(S[4], S[5])
+        "vaesenc %%xmm20, %%xmm28, %%xmm28;"  // C[4] = AESENC(C[4], M[4])
+        "vaesenc %%xmm28, %%xmm1, %%xmm4;"    // S[20] = AESENC(S[1], C[4])
+        "vpxorq %%xmm7, %%xmm20, %%xmm7;"      // S[7] = SIMD_XOR(S[7], M[4])
+        "vpxorq %%xmm1, %%xmm20, %%xmm1;"      // S[1] = SIMD_XOR(S[1], M[4])
+
+        // round 6
+        "vmovdqu64 80(%1, %%rax), %%xmm21;"   // Load M[5] into xmm21
+        "vpxorq %%xmm5, %%xmm6, %%xmm29;"      // C[5] = SIMD_XOR(S[5], S[6])
+        "vaesenc %%xmm21, %%xmm29, %%xmm29;"  // C[5] = AESENC(C[5], M[5])
+        "vaesenc %%xmm29, %%xmm2, %%xmm5;"    // S[21] = AESENC(S[2], C[5])
+        "vpxorq %%xmm8, %%xmm21, %%xmm8;"      // S[8] = SIMD_XOR(S[8], M[5])
+        "vpxorq %%xmm2, %%xmm21, %%xmm2;"      // S[2] = SIMD_XOR(S[2], M[5])
+
+        // round 7
+        "vmovdqu64 96(%1, %%rax), %%xmm22;"   // Load M[6] into xmm22
+        "vpxorq %%xmm6, %%xmm7, %%xmm30;"      // C[6] = SIMD_XOR(S[6], S[7])
+        "vaesenc %%xmm22, %%xmm30, %%xmm30;"  // C[6] = AESENC(C[6], M[6])
+        "vaesenc %%xmm30, %%xmm3, %%xmm6;"    // S[22] = AESENC(S[3], C[6])
+        "vpxorq %%xmm9, %%xmm22, %%xmm9;"      // S[9] = SIMD_XOR(S[9], M[6])
+        "vpxorq %%xmm3, %%xmm22, %%xmm3;"      // S[3] = SIMD_XOR(S[3], M[6])
+
+        // round 8
+        "vmovdqu64 112(%1, %%rax), %%xmm23;"  // Load M[7] into xmm23
+        "vpxorq %%xmm7, %%xmm8, %%xmm31;"      // C[7] = SIMD_XOR(S[7], S[8])
+        "vaesenc %%xmm23, %%xmm31, %%xmm31;"  // C[7] = AESENC(C[7], M[7])
+        "vaesenc %%xmm31, %%xmm4, %%xmm7;"    // S[23] = AESENC(S[4], C[7])
+        "vpxorq %%xmm10, %%xmm23, %%xmm10;"    // S[10] = SIMD_XOR(S[10], M[7])
+        "vpxorq %%xmm4, %%xmm23, %%xmm4;"      // S[4] = SIMD_XOR(S[4], M[7])
+
+        // round 9
+        "vmovdqa64 128(%1, %%rax), %%xmm16;"    // Load M[8] into xmm16
+        "vpxorq %%xmm8, %%xmm9, %%xmm24;"        // C[8] = SIMD_XOR(S[8], S[9])
+        "vaesenc %%xmm16, %%xmm24, %%xmm24;"    // C[8] = AESENC(M[8], C[8])
+        "vaesenc %%xmm24, %%xmm5, %%xmm8;"      // S[24] = AESENC(C[8], S[5])
+        "vpxorq %%xmm11, %%xmm16, %%xmm11;"      // S[11] = SIMD_XOR(S[11], M[8])
+        "vpxorq %%xmm5, %%xmm16, %%xmm5;"        // S[5] = SIMD_XOR(S[5], M[8])
+
+        // round 10
+        "vmovdqa64 144(%1, %%rax), %%xmm17;"    // Load M[9] into xmm17
+        "vpxorq %%xmm9, %%xmm10, %%xmm25;"       // C[9] = SIMD_XOR(S[9], S[10])
+        "vaesenc %%xmm17, %%xmm25, %%xmm25;"    // C[9] = AESENC(M[9], C[9])
+        "vaesenc %%xmm25, %%xmm6, %%xmm9;"      // S[25] = AESENC(C[9], S[6])
+        "vpxorq %%xmm12, %%xmm17, %%xmm12;"      // S[12] = SIMD_XOR(S[12], M[9])
+        "vpxorq %%xmm6, %%xmm17, %%xmm6;"        // S[6] = SIMD_XOR(S[6], M[9])
+
+        // round 11
+        "vmovdqa64 160(%1, %%rax), %%xmm18;"    // Load M[10] into xmm18
+        "vpxorq %%xmm10, %%xmm11, %%xmm26;"      // C[10] = SIMD_XOR(S[10], S[11])
+        "vaesenc %%xmm18, %%xmm26, %%xmm26;"    // C[10] = AESENC(M[10], C[10])
+        "vaesenc %%xmm26, %%xmm7, %%xmm10;"     // S[26] = AESENC(C[10], S[7])
+        "vpxorq %%xmm13, %%xmm18, %%xmm13;"      // S[13] = SIMD_XOR(S[13], M[10])
+        "vpxorq %%xmm7, %%xmm18, %%xmm7;"        // S[7] = SIMD_XOR(S[7], M[10])
+
+        // round 12
+        "vmovdqa64 176(%1, %%rax), %%xmm19;"    // Load M[11] into xmm19
+        "vpxorq %%xmm11, %%xmm12, %%xmm27;"      // C[11] = SIMD_XOR(S[11], S[12])
+        "vaesenc %%xmm19, %%xmm27, %%xmm27;"    // C[11] = AESENC(M[11], C[11])
+        "vaesenc %%xmm27, %%xmm8, %%xmm11;"     // S[27] = AESENC(C[11], S[8])
+        "vpxorq %%xmm14, %%xmm19, %%xmm14;"      // S[14] = SIMD_XOR(S[14], M[11])
+        "vpxorq %%xmm8, %%xmm19, %%xmm8;"        // S[8] = SIMD_XOR(S[8], M[11])
+
+        // round 13
+        "vmovdqa64 192(%1, %%rax), %%xmm20;"    // Load M[12] into xmm20
+        "vpxorq %%xmm12, %%xmm13, %%xmm28;"      // C[12] = SIMD_XOR(S[12], S[13])
+        "vaesenc %%xmm20, %%xmm28, %%xmm28;"    // C[12] = AESENC(M[12], C[12])
+        "vaesenc %%xmm28, %%xmm9, %%xmm12;"     // S[28] = AESENC(C[12], S[9])
+        "vpxorq %%xmm15, %%xmm20, %%xmm15;"      // S[15] = SIMD_XOR(S[15], M[12])
+        "vpxorq %%xmm9, %%xmm20, %%xmm9;"        // S[9] = SIMD_XOR(S[9], M[12])
+
+        // round 14
+        "vmovdqa64 208(%1, %%rax), %%xmm21;"    // Load M[13] into xmm21
+        "vpxorq %%xmm13, %%xmm14, %%xmm29;"      // C[13] = SIMD_XOR(S[13], S[14])
+        "vaesenc %%xmm21, %%xmm29, %%xmm29;"    // C[13] = AESENC(M[13], C[13])
+        "vaesenc %%xmm29, %%xmm10, %%xmm13;"    // S[29] = AESENC(C[13], S[10])
+        "vpxorq %%xmm0, %%xmm21, %%xmm0;"        // S[0] = SIMD_XOR(S[0], M[13])
+        "vpxorq %%xmm10, %%xmm21, %%xmm10;"      // S[10] = SIMD_XOR(S[10], M[13])
+
+        // round 15
+        "vmovdqa64 224(%1, %%rax), %%xmm22;"    // Load M[14] into xmm22
+        "vpxorq %%xmm14, %%xmm15, %%xmm30;"      // C[14] = SIMD_XOR(S[14], S[15])
+        "vaesenc %%xmm22, %%xmm30, %%xmm30;"    // C[14] = AESENC(M[14], C[14])
+        "vaesenc %%xmm30, %%xmm11, %%xmm14;"    // S[30] = AESENC(C[14], S[11])
+        "vpxorq %%xmm1, %%xmm22, %%xmm1;"        // S[1] = SIMD_XOR(S[1], M[14])
+        "vpxorq %%xmm11, %%xmm22, %%xmm11;"      // S[11] = SIMD_XOR(S[11], M[14])
+
+        // round 16
+        "vmovdqa64 240(%1, %%rax), %%xmm23;"    // Load M[15] into xmm23
+        "vpxorq %%xmm15, %%xmm0, %%xmm31;"       // C[15] = SIMD_XOR(S[15], S[0])
+        "vaesenc %%xmm23, %%xmm31, %%xmm31;"    // C[15] = AESENC(M[15], C[15])
+        "vaesenc %%xmm31, %%xmm12, %%xmm15;"    // S[31] = AESENC(C[15], S[12])
+        "vpxorq %%xmm2, %%xmm23, %%xmm2;"        // S[2] = SIMD_XOR(S[2], M[15])
+        "vpxorq %%xmm12, %%xmm23, %%xmm12;"      // S[12] = SIMD_XOR(S[12], M[15])
+
+                
+        "addq $256, %%rax;"                 // i += 256
+        "jmp 1b;"                           // Loop back
+
+        "2:;"                               // Loop end
+
+        // Write back state
+        "vmovdqa64 %%xmm0, (%0);"         
+        "vmovdqa64 %%xmm1, 16(%0);"     
+        "vmovdqa64 %%xmm2, 32(%0);"     
+        "vmovdqa64 %%xmm3, 48(%0);"        
+        "vmovdqa64 %%xmm4, 64(%0);"     
+        "vmovdqa64 %%xmm5, 80(%0);"    
+        "vmovdqa64 %%xmm6, 96(%0);"    
+        "vmovdqa64 %%xmm7, 112(%0);"    
+        "vmovdqa64 %%xmm8, 128(%0);"       
+        "vmovdqa64 %%xmm9, 144(%0);"       
+        "vmovdqa64 %%xmm10, 160(%0);"    
+        "vmovdqa64 %%xmm11, 176(%0);"    
+        "vmovdqa64 %%xmm12, 192(%0);"     
+        "vmovdqa64 %%xmm13, 208(%0);"   
+        "vmovdqa64 %%xmm14, 224(%0);"    
+        "vmovdqa64 %%xmm15, 240(%0);" 
+
+        :
+        : "r"(state), "r"(ad), "r"(prefix)  // input dst, src, prefix, state
+        : "%rax", "%xmm0", "%xmm1", "%xmm2", "%xmm3",
+            "%xmm4", "%xmm5", "%xmm6", "%xmm7",
+            "%xmm8", "%xmm9", "%xmm10", "%xmm11",
+            "%xmm12", "%xmm13", "%xmm14", "%xmm15",
+            "%xmm16", "%xmm17", "%xmm18", "%xmm19",
+            "%xmm20", "%xmm21", "%xmm22", "%xmm23",
+            "%xmm24", "%xmm25", "%xmm26", "%xmm27",
+            "%xmm28", "%xmm29", "%xmm30", "%xmm31",
+            "memory"
+    );
+    i = prefix;
     #else
     for(; i < prefix; i += UNROLL_BLOCK_SIZE) {
         AD_UPDATE;
@@ -600,22 +600,22 @@ void HiAE_stream_encrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size
 
     __asm__ volatile (
         // Load state into xmm0-xmm15
-        "vmovdqa64 (%0), %%xmm0;"    // state[0]
-        "vmovdqa64 16(%0), %%xmm1;"  // state[1]
-        "vmovdqa64 32(%0), %%xmm2;"  // state[2]
-        "vmovdqa64 48(%0), %%xmm3;"  // state[3]
-        "vmovdqa64 64(%0), %%xmm4;"  // state[4]
-        "vmovdqa64 80(%0), %%xmm5;"  // state[5]
-        "vmovdqa64 96(%0), %%xmm6;"  // state[6]
-        "vmovdqa64 112(%0), %%xmm7;" // state[7]
-        "vmovdqa64 128(%0), %%xmm8;" // state[8]
-        "vmovdqa64 144(%0), %%xmm9;" // state[9]
-        "vmovdqa64 160(%0), %%xmm10;"// state[10]
-        "vmovdqa64 176(%0), %%xmm11;"// state[11]
-        "vmovdqa64 192(%0), %%xmm12;"// state[12]
-        "vmovdqa64 208(%0), %%xmm13;"// state[13]
-        "vmovdqa64 224(%0), %%xmm14;"// state[14]
-        "vmovdqa64 240(%0), %%xmm15;"// state[15]
+        "vmovdqa64 (%3), %%xmm0;"    // state[0]
+        "vmovdqa64 16(%3), %%xmm1;"  // state[1]
+        "vmovdqa64 32(%3), %%xmm2;"  // state[2]
+        "vmovdqa64 48(%3), %%xmm3;"  // state[3]
+        "vmovdqa64 64(%3), %%xmm4;"  // state[4]
+        "vmovdqa64 80(%3), %%xmm5;"  // state[5]
+        "vmovdqa64 96(%3), %%xmm6;"  // state[6]
+        "vmovdqa64 112(%3), %%xmm7;" // state[7]
+        "vmovdqa64 128(%3), %%xmm8;" // state[8]
+        "vmovdqa64 144(%3), %%xmm9;" // state[9]
+        "vmovdqa64 160(%3), %%xmm10;"// state[10]
+        "vmovdqa64 176(%3), %%xmm11;"// state[11]
+        "vmovdqa64 192(%3), %%xmm12;"// state[12]
+        "vmovdqa64 208(%3), %%xmm13;"// state[13]
+        "vmovdqa64 224(%3), %%xmm14;"// state[14]
+        "vmovdqa64 240(%3), %%xmm15;"// state[15]
 
         "movq $0, %%rax;"          // Initialize counter i = 0
         "1:;"                      // Loop start
@@ -789,22 +789,22 @@ void HiAE_stream_encrypt(DATA128b* state, uint8_t *dst, const uint8_t *src, size
         "2:;"                               // Loop end
 
         // Write back state
-        "vmovdqa64 %%xmm0, (%0);"         
-        "vmovdqa64 %%xmm1, 16(%0);"     
-        "vmovdqa64 %%xmm2, 32(%0);"     
-        "vmovdqa64 %%xmm3, 48(%0);"        
-        "vmovdqa64 %%xmm4, 64(%0);"     
-        "vmovdqa64 %%xmm5, 80(%0);"    
-        "vmovdqa64 %%xmm6, 96(%0);"    
-        "vmovdqa64 %%xmm7, 112(%0);"    
-        "vmovdqa64 %%xmm8, 128(%0);"       
-        "vmovdqa64 %%xmm9, 144(%0);"       
-        "vmovdqa64 %%xmm10, 160(%0);"    
-        "vmovdqa64 %%xmm11, 176(%0);"    
-        "vmovdqa64 %%xmm12, 192(%0);"     
-        "vmovdqa64 %%xmm13, 208(%0);"   
-        "vmovdqa64 %%xmm14, 224(%0);"    
-        "vmovdqa64 %%xmm15, 240(%0);" 
+        "vmovdqa64 %%xmm0, (%3);"         
+        "vmovdqa64 %%xmm1, 16(%3);"     
+        "vmovdqa64 %%xmm2, 32(%3);"     
+        "vmovdqa64 %%xmm3, 48(%3);"        
+        "vmovdqa64 %%xmm4, 64(%3);"     
+        "vmovdqa64 %%xmm5, 80(%3);"    
+        "vmovdqa64 %%xmm6, 96(%3);"    
+        "vmovdqa64 %%xmm7, 112(%3);"    
+        "vmovdqa64 %%xmm8, 128(%3);"       
+        "vmovdqa64 %%xmm9, 144(%3);"       
+        "vmovdqa64 %%xmm10, 160(%3);"    
+        "vmovdqa64 %%xmm11, 176(%3);"    
+        "vmovdqa64 %%xmm12, 192(%3);"     
+        "vmovdqa64 %%xmm13, 208(%3);"   
+        "vmovdqa64 %%xmm14, 224(%3);"    
+        "vmovdqa64 %%xmm15, 240(%3);" 
 
         :
         : "r"(dst), "r"(src), "r"(prefix), "r"(state) // input dst, src, prefix, state
