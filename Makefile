@@ -39,27 +39,27 @@ $(BINDIR):
 	@mkdir -p $(BINDIR)
 
 # Performance test
-$(BINDIR)/perf_test: $(SOURCES) $(HEADERS) test/performance_test.c
+$(BINDIR)/perf_test: $(BINDIR) $(SOURCES) $(HEADERS) test/performance_test.c
 	@echo "Building performance test..."
 	$(CC) $(CFLAGS) $(SOURCES) test/performance_test.c -o $@ $(LDFLAGS)
 
 # Functional test
-$(BINDIR)/func_test: $(SOURCES) $(HEADERS) test/function_test.c
+$(BINDIR)/func_test: $(BINDIR) $(SOURCES) $(HEADERS) test/function_test.c
 	@echo "Building functional test..."
 	$(CC) $(CFLAGS) $(SOURCES) test/function_test.c -o $@ $(LDFLAGS)
 
 # Test vectors validation
-$(BINDIR)/test_vectors: $(SOURCES) $(HEADERS) test/test_vectors_ietf.c
+$(BINDIR)/test_vectors: $(BINDIR) $(SOURCES) $(HEADERS) test/test_vectors_ietf.c
 	@echo "Building test vectors validation..."
 	$(CC) $(CFLAGS) $(SOURCES) test/test_vectors_ietf.c -o $@ $(LDFLAGS)
 
 # HiAE-MAC application
-$(BINDIR)/HiAE-MAC: $(SOURCES) $(HEADERS) app/HiAE-MAC.c
+$(BINDIR)/HiAE-MAC: $(BINDIR) $(SOURCES) $(HEADERS) app/HiAE-MAC.c
 	@echo "Building HiAE-MAC application..."
 	$(CC) $(CFLAGS) $(SOURCES) app/HiAE-MAC.c -o $@ $(LDFLAGS)
 
 # HiAE-File-AEAD application
-$(BINDIR)/HiAE-File-AEAD: $(SOURCES) $(HEADERS) app/HiAE-File-AEAD.c
+$(BINDIR)/HiAE-File-AEAD: $(BINDIR) $(SOURCES) $(HEADERS) app/HiAE-File-AEAD.c
 	@echo "Building HiAE-File-AEAD application..."
 	$(CC) $(CFLAGS) $(SOURCES) app/HiAE-File-AEAD.c -o $@ $(LDFLAGS)
 
