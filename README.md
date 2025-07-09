@@ -2,6 +2,10 @@
 
 Official implementation of paper "[HiAE: A High-Throughput Authenticated Encryption Algorithm for Cross-Platform Efficiency](https://eprint.iacr.org/2025/377)"
 
+## News
+
+* [2025/07/09] A response to recent  Cryptanalysis on HiAE: [HiAE Remains Secure in Its Intended Model: A Clarification of Claimed Attacks](https://eprint.iacr.org/2025/1235.pdf)
+
 ## Design Rational
 
 The HiAE is an AES-based AEAD cipher that mainly focuses on cross-platform efficiency(ARM and x86) and achieves the fastest speed on the latest ARM and x86 architectures.
