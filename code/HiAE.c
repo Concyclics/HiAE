@@ -572,8 +572,8 @@ void HiAE_stream_proc_ad(DATA128b* state, const uint8_t *ad, size_t len) {
     
 void HiAE_stream_finalize(DATA128b* state, uint64_t ad_len, uint64_t plain_len, uint8_t *tag) {
     uint64_t lens[2];
-    lens[0] = ad_len;
-    lens[1] = plain_len;
+    lens[0] = ad_len * 8;
+    lens[1] = plain_len * 8;
     DATA128b temp, tmp[STATE];
     temp = SIMD_LOAD((uint8_t *)lens);
     INIT_UPDATE(temp);
