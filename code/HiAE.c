@@ -159,23 +159,23 @@ state[13] = state[14]; \
 state[14] = state[15]; \
 state[15] = tmp[0]
 
-#define INIT_UPDATE(c0) \
+#define INIT_UPDATE(c0, c1) \
 UPDATE_STATE_offset(c0, 0);\
-UPDATE_STATE_offset(c0, 1);\
+UPDATE_STATE_offset(c1, 1);\
 UPDATE_STATE_offset(c0, 2);\
-UPDATE_STATE_offset(c0, 3);\
+UPDATE_STATE_offset(c1, 3);\
 UPDATE_STATE_offset(c0, 4);\
-UPDATE_STATE_offset(c0, 5);\
+UPDATE_STATE_offset(c1, 5);\
 UPDATE_STATE_offset(c0, 6);\
-UPDATE_STATE_offset(c0, 7);\
+UPDATE_STATE_offset(c1, 7);\
 UPDATE_STATE_offset(c0, 8);\
-UPDATE_STATE_offset(c0, 9);\
+UPDATE_STATE_offset(c1, 9);\
 UPDATE_STATE_offset(c0, 10);\
-UPDATE_STATE_offset(c0, 11);\
+UPDATE_STATE_offset(c1, 11);\
 UPDATE_STATE_offset(c0, 12);\
-UPDATE_STATE_offset(c0, 13);\
+UPDATE_STATE_offset(c1, 13);\
 UPDATE_STATE_offset(c0, 14);\
-UPDATE_STATE_offset(c0, 15);
+UPDATE_STATE_offset(c1, 15);
 
 #define AD_UPDATE \
 LOAD_1BLOCK_offset(M[0], 0);\
@@ -320,16 +320,16 @@ void HiAE_stream_init(DATA128b* state, const uint8_t *key, const uint8_t *iv) {
 
     DATA128b ze = SIMD_ZERO_128();
     state[0] = c0;
-    state[1] = k1;
-    state[2] = N;
-    state[3] = c0;
+    state[1] = k0;
+    state[2] = c0;
+    state[3] = N;
     state[4] = ze;
-    state[5] = SIMD_XOR(N, k0);
+    state[5] = k0;
     state[6] = ze;
     state[7] = c1;
-    state[8] = SIMD_XOR(N, k1);
+    state[8] = k1;
     state[9] = ze;
-    state[10] = k1;
+    state[10] = SIMD_XOR(N, k1);
     state[11] = c0;
     state[12] = c1;
     state[13] = k1;
@@ -337,10 +337,8 @@ void HiAE_stream_init(DATA128b* state, const uint8_t *key, const uint8_t *iv) {
     state[15] = SIMD_XOR(c0, c1);
 
     DATA128b tmp[STATE];
-    INIT_UPDATE(c0);
-    INIT_UPDATE(c0);
-    state[9] = SIMD_XOR(state[9], k0);
-    state[13] = SIMD_XOR(state[13], k1);
+    INIT_UPDATE(k0, k1);
+    INIT_UPDATE(k0, k1);
 }
 
 void HiAE_stream_proc_ad(DATA128b* state, const uint8_t *ad, size_t len) {
@@ -1161,3 +1159,4 @@ int HiAE_verification(uint8_t* key, uint8_t* iv, uint8_t* ad, size_t ad_len, uin
 
     return 0;
 }
+
