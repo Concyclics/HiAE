@@ -42,13 +42,13 @@ gcc -O3 -march=native -I code code/*.c app/HiAE-MAC.c -o HiAE-MAC
 **Usage**
 
 ```bash
-./HiAE-MAC <input_file> <key> <iv> [buffer_size (MB)]
+./bin/HiAE-MAC <input_file> <key> <iv> [buffer_size (MB)]
 ```
 
 **Example**
 
 ```bash
-$ ./HiAE-MAC README.md 1926 0817
+$ ./bin/HiAE-MAC README.md 1926 0817
 KEY = 1926000000000000000000000000000000000000000000000000000000000000
 IV = 08170000000000000000000000000000
 MAC: c9e1326675a5e70c3609c8eacfe89b83
@@ -69,19 +69,19 @@ gcc -O3 -march=native -I code code/*.c app/HiAE-File-AEAD.c -o HiAE-File-AEAD
 **Usage**
 
 ```bash
-./HiAE-File-AEAD <encrypt/decrypt> <input_file> <output_file> <key> <iv> [buffer_size (MB)]
+./bin/HiAE-File-AEAD <encrypt/decrypt> <input_file> <output_file> <key> <iv> [buffer_size (MB)]
 ```
 
 **Example**
 
 ```bash
-$ ./HiAE-File-AEAD encrypt README.md README.enc 1926 0817
+$ ./bin/HiAE-File-AEAD encrypt README.md README.enc 1926 0817
 KEY = 1926000000000000000000000000000000000000000000000000000000000000
 IV = 08170000000000000000000000000000
 Encrypted README.md to README.enc (2079 bytes) in 0.000178 seconds
 Speed: 0.010878 GB/s
 
-$ ./HiAE-File-AEAD decrypt README.enc README.md 1926 0817
+$ ./bin/HiAE-File-AEAD decrypt README.enc README.md 1926 0817
 KEY = 1926000000000000000000000000000000000000000000000000000000000000
 IV = 08170000000000000000000000000000
 Authorization Passed.
