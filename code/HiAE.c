@@ -574,8 +574,8 @@ void HiAE_stream_finalize(DATA128b* state, uint64_t ad_len, uint64_t plain_len, 
     lens[1] = plain_len * 8;
     DATA128b temp, tmp[STATE];
     temp = SIMD_LOAD((uint8_t *)lens);
-    INIT_UPDATE(temp);
-    INIT_UPDATE(temp);
+    INIT_UPDATE(temp, temp);
+    INIT_UPDATE(temp, temp);
     temp = state[0];
     for (size_t i = 1; i < STATE; ++i) {
         temp = SIMD_XOR(temp, state[i]);
